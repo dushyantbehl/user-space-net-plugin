@@ -12,9 +12,18 @@ endif
 #
 # VPP Variables
 #
+VPPGPG=ge4a0f9f~b72
+VPPMAJOR=19
+VPPMINOR=04
+VPPDOTRL=1
 
-VPPVERSION=1804
-VPPDOTVERSION=18.04
+VPPVERSION=$(VPPMAJOR)$(VPPMINOR)
+VPPDOTVERSION=$(VPPMAJOR).$(VPPMINOR).$(VPPDOTRL)
+ifeq ($(VPPDOTRL),0)
+	VPPDOTVERSION=$(VPPMAJOR).$(VPPMINOR)
+else
+	VVPPDOTVERSION=$(VPPMAJOR).$(VPPMINOR).$(VPPDOTRL)
+endif
 
 ifeq ($(PKG),rpm)
 	VPPLIBDIR=/usr/lib64
@@ -103,46 +112,52 @@ ifeq ($(VPPINSTALLED),0)
 	@echo VPP not installed, installing required files. Run *sudo make clean* to remove installed files.
 	@mkdir -p tmpvpp/
 ifeq ($(PKG),rpm)
-	@cd tmpvpp && wget http://cbs.centos.org/kojifiles/packages/vpp/$(VPPDOTVERSION)/1/x86_64/vpp-lib-$(VPPDOTVERSION)-1.x86_64.rpm
-	@cd tmpvpp && wget http://cbs.centos.org/kojifiles/packages/vpp/$(VPPDOTVERSION)/1/x86_64/vpp-devel-$(VPPDOTVERSION)-1.x86_64.rpm
-	@cd tmpvpp && rpm2cpio ./vpp-devel-$(VPPDOTVERSION)-1.x86_64.rpm | cpio -ivd \
+	@cd tmpvpp && wget --content-disposition https://packagecloud.io/fdio/$(VPPVERSION)/packages/el/7/vpp-lib-$(VPPDOTVERSION)-1~$(VPPGPG).x86_64.rpm/download.rpm
+	@cd tmpvpp && wget --content-disposition https://packagecloud.io/fdio/$(VPPVERSION)/packages/el/7/vpp-devel-$(VPPDOTVERSION)-1~$(VPPGPG).x86_64.rpm/download.rpm
+	@cd tmpvpp && rpm2cpio ./vpp-devel-$(VPPDOTVERSION)-1~$(VPPGPG).x86_64.rpm | cpio -ivd \
 		./usr/include/vpp-api/client/vppapiclient.h
-	@cd tmpvpp && rpm2cpio ./vpp-lib-$(VPPDOTVERSION)-1.x86_64.rpm | cpio -ivd \
-		./usr/lib64/libvppapiclient.so.0.0.0
-	@cd tmpvpp && rpm2cpio ./vpp-lib-$(VPPDOTVERSION)-1.x86_64.rpm | cpio -ivd \
-		./usr/share/vpp/api/interface.api.json \
-		./usr/share/vpp/api/l2.api.json \
-		./usr/share/vpp/api/memif.api.json \
-		./usr/share/vpp/api/vhost_user.api.json \
-		./usr/share/vpp/api/vpe.api.json
-else ifeq ($(PKG),deb)
-	@cd tmpvpp && wget https://nexus.fd.io/content/repositories/fd.io.stable.$(VPPVERSION).ubuntu.xenial.main/io/fd/vpp/vpp/$(VPPDOTVERSION)-release_amd64/vpp-$(VPPDOTVERSION)-release_amd64-deb.deb
-	@cd tmpvpp && wget https://nexus.fd.io/content/repositories/fd.io.stable.$(VPPVERSION).ubuntu.xenial.main/io/fd/vpp/vpp-lib/$(VPPDOTVERSION)-release_amd64/vpp-lib-$(VPPDOTVERSION)-release_amd64-deb.deb
-	@cd tmpvpp && wget https://nexus.fd.io/content/repositories/fd.io.stable.$(VPPVERSION).ubuntu.xenial.main/io/fd/vpp/vpp-dev/$(VPPDOTVERSION)-release_amd64/vpp-dev-$(VPPDOTVERSION)-release_amd64-deb.deb
-	@cd tmpvpp && wget https://nexus.fd.io/content/repositories/fd.io.stable.$(VPPVERSION).ubuntu.xenial.main/io/fd/vpp/vpp-plugins/$(VPPDOTVERSION)-release_amd64/vpp-plugins-$(VPPDOTVERSION)-release_amd64-deb.deb
-	@cd tmpvpp && dpkg-deb --fsys-tarfile vpp-dev-$(VPPDOTVERSION)-release_amd64-deb.deb | tar -x \
-		./usr/include/vpp-api/client/vppapiclient.h
-	@cd tmpvpp && dpkg-deb --fsys-tarfile vpp-lib-$(VPPDOTVERSION)-release_amd64-deb.deb | tar -x \
-		./usr/lib/x86_64-linux-gnu/libvppapiclient.so.0.0.0
-	@cd tmpvpp && dpkg-deb --fsys-tarfile vpp-$(VPPDOTVERSION)-release_amd64-deb.deb | tar -x \
+	@cd tmpvpp && rpm2cpio ./vpp-lib-$(VPPDOTVERSION)-1~$(VPPGPG).x86_64.rpm | cpio -ivd \
+		./usr/lib64/libvppapiclient.so.$(VPPDOTVERSION)
+	@cd tmpvpp && rpm2cpio ./vpp-lib-$(VPPDOTVERSION)-1~$(VPPGPG).x86_64.rpm | cpio -ivd \
 		./usr/share/vpp/api/interface.api.json \
 		./usr/share/vpp/api/l2.api.json \
 		./usr/share/vpp/api/vhost_user.api.json \
-		./usr/share/vpp/api/vpe.api.json
-	@cd tmpvpp && dpkg-deb --fsys-tarfile vpp-plugins-$(VPPDOTVERSION)-release_amd64-deb.deb | tar -x \
+		./usr/share/vpp/api/vpe.api.json \
 		./usr/share/vpp/api/memif.api.json
+else ifeq ($(PKG),deb)
+	@cd tmpvpp && wget --content-disposition https://packagecloud.io/fdio/release/packages/ubuntu/xenial/vpp_$(VPPDOTVERSION)-release_amd64.deb/download.deb
+	@cd tmpvpp && wget --content-disposition https://packagecloud.io/fdio/release/packages/ubuntu/xenial/vpp-dev_$(VPPDOTVERSION)-release_amd64.deb/download.deb
+	@cd tmpvpp && wget --content-disposition https://packagecloud.io/fdio/release/packages/ubuntu/xenial/vpp-plugin-core_$(VPPDOTVERSION)-release_amd64.deb/download.deb
+	@cd tmpvpp && dpkg-deb --fsys-tarfile vpp-dev_$(VPPDOTVERSION)-release_amd64.deb | tar -x \
+		./usr/include/vpp-api/client/vppapiclient.h
+	@cd tmpvpp && dpkg-deb --fsys-tarfile vpp_$(VPPDOTVERSION)-release_amd64.deb | tar -x \
+		./usr/lib/x86_64-linux-gnu/libvppapiclient.so.$(VPPDOTVERSION) \
+		./usr/share/vpp/api/core/interface.api.json \
+		./usr/share/vpp/api/core/l2.api.json \
+		./usr/share/vpp/api/core/vhost_user.api.json \
+		./usr/share/vpp/api/core/vpe.api.json
+	@cd tmpvpp && dpkg-deb --fsys-tarfile vpp-plugin-core_$(VPPDOTVERSION)-release_amd64.deb | tar -x \
+		./usr/share/vpp/api/plugins/memif.api.json
 endif
 	@$(SUDO) -E mkdir -p /usr/include/vpp-api/client/
 	@$(SUDO) -E cp tmpvpp/usr/include/vpp-api/client/vppapiclient.h /usr/include/vpp-api/client/.
 	@$(SUDO) -E chown -R bin:bin /usr/include/vpp-api/
 	@echo   Installed /usr/include/vpp-api/client/vppapiclient.h
-	@$(SUDO) -E cp tmpvpp$(VPPLIBDIR)/libvppapiclient.so.0.0.0 $(VPPLIBDIR)/.
-	@$(SUDO) -E ln -s $(VPPLIBDIR)/libvppapiclient.so.0.0.0 $(VPPLIBDIR)/libvppapiclient.so
-	@$(SUDO) -E ln -s $(VPPLIBDIR)/libvppapiclient.so.0.0.0 $(VPPLIBDIR)/libvppapiclient.so.0
+	@$(SUDO) -E cp tmpvpp$(VPPLIBDIR)/libvppapiclient.so.$(VPPDOTVERSION) $(VPPLIBDIR)/.
+ifneq ($(VPPDOTRL),0)
+	@$(SUDO) -E ln -s $(VPPLIBDIR)/libvppapiclient.so.$(VPPDOTVERSION) $(VPPLIBDIR)/libvppapiclient.so.$(VPPMAJOR).$(VPPMINOR)
+endif
+	@$(SUDO) -E ln -s $(VPPLIBDIR)/libvppapiclient.so.$(VPPDOTVERSION) $(VPPLIBDIR)/libvppapiclient.so.$(VPPMAJOR)
+	@$(SUDO) -E ln -s $(VPPLIBDIR)/libvppapiclient.so.$(VPPDOTVERSION) $(VPPLIBDIR)/libvppapiclient.so
 	@$(SUDO) -E chown -R bin:bin $(VPPLIBDIR)/libvppapiclient.so*
 	@echo   Installed $(VPPLIBDIR)/libvppapiclient.so
 	@$(SUDO) -E mkdir -p /usr/share/vpp/api/
+ifeq ($(PKG),rpm)
 	@$(SUDO) -E cp tmpvpp/usr/share/vpp/api/*.json /usr/share/vpp/api/.
+else ifeq ($(PKG),deb)
+	@$(SUDO) -E cp tmpvpp/usr/share/vpp/api/core/*.json /usr/share/vpp/api/.
+	@$(SUDO) -E cp tmpvpp/usr/share/vpp/api/plugins/*.json /usr/share/vpp/api/.
+endif
 	@$(SUDO) -E chown -R bin:bin /usr/share/vpp/
 	@echo   Installed /usr/share/vpp/api/*.json
 	@rm -rf tmpvpp
